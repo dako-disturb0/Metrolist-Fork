@@ -37,6 +37,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -45,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,10 +58,12 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.metrolist.music.LocalDatabase
 import com.metrolist.music.R
@@ -88,7 +92,9 @@ import com.metrolist.music.constants.OpenRouterDefaultBaseUrl
 import com.metrolist.music.constants.OpenRouterDefaultModel
 import com.metrolist.music.constants.OpenRouterModelKey
 import com.metrolist.music.constants.DeeplFormalityKey
+import com.metrolist.music.constants.LyricsTextSizeKey
 import com.metrolist.music.utils.rememberPreference
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,12 +119,95 @@ fun LyricsMenu(
     val deeplFormality by rememberPreference(DeeplFormalityKey, "default")
     var respectAgentPositioning by rememberPreference(RespectAgentPositioningKey, true)
     var showIntervalIndicator by rememberPreference(ShowIntervalIndicatorKey, true)
+    val (lyricsTextSize, onLyricsTextSizeChange) = rememberPreference(LyricsTextSizeKey, defaultValue = 24f)
 
     val hasApiKey = if (aiProvider == "DeepL") deeplApiKey.isNotBlank() else openRouterApiKey.isNotBlank()
     
     // Observe the authoritative translation-active state from the singleton; this persists
     // correctly across menu open/close cycles and avoids the lyricsProvider() race condition.
     val hasTranslations by LyricsTranslationHelper.hasActiveTranslations.collectAsStateWithLifecycle()
+
+    var showLyricsTextSizeDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    if (showLyricsTextSizeDialog) {
+        val initialTextSize = remember(showLyricsTextSizeDialog) { lyricsTextSize }
+        var tempTextSize by remember { mutableFloatStateOf(lyricsTextSize) }
+
+        DefaultDialog(
+            onDismiss = {
+                onLyricsTextSizeChange(initialTextSize)
+                showLyricsTextSizeDialog = false
+            },
+            buttons = {
+                TextButton(
+                    onClick = {
+                        tempTextSize = 24f
+                        onLyricsTextSizeChange(24f)
+                    },
+                ) {
+                    Text(stringResource(R.string.reset))
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                TextButton(
+                    onClick = {
+                        onLyricsTextSizeChange(initialTextSize)
+                        showLyricsTextSizeDialog = false
+                    },
+                ) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+                TextButton(
+                    onClick = {
+                        onLyricsTextSizeChange(tempTextSize)
+                        showLyricsTextSizeDialog = false
+                    },
+                ) {
+                    Text(stringResource(android.R.string.ok))
+                }
+            },
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(16.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.lyrics_text_size),
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+
+                Text(
+                    text = "${tempTextSize.roundToInt()} sp",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+
+                Text(
+                    text = stringResource(R.string.lyrics),
+                    fontSize = tempTextSize.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(vertical = 8.dp),
+                )
+
+                Slider(
+                    value = tempTextSize,
+                    onValueChange = {
+                        tempTextSize = it
+                        onLyricsTextSizeChange(it)
+                    },
+                    valueRange = 12f..48f,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+    }
 
     var showEditDialog by rememberSaveable {
         mutableStateOf(false)
@@ -615,6 +704,28 @@ fun LyricsMenu(
                         )
                     )
                     
+                    add(
+                        Material3MenuItemData(
+                            title = { Text(stringResource(R.string.lyrics_text_size)) },
+                            icon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.lyrics),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                showLyricsTextSizeDialog = true
+                            },
+                            trailingContent = {
+                                Text(
+                                    text = "${lyricsTextSize.roundToInt()} sp",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        )
+                    )
+
                     add(
                         Material3MenuItemData(
                             title = { Text(stringResource(R.string.lyrics_offset)) },

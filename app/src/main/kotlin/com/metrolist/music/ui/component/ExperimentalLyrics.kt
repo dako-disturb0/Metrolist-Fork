@@ -93,10 +93,12 @@ import com.metrolist.music.constants.AiSystemPromptKey
 import com.metrolist.music.constants.DeeplApiKey
 import com.metrolist.music.constants.DeeplFormalityKey
 import com.metrolist.music.constants.LyricsClickKey
+import com.metrolist.music.constants.LyricsLineSpacingKey
 import com.metrolist.music.constants.LyricsRomanizeAsMainKey
 import com.metrolist.music.constants.LyricsRomanizeCyrillicByLineKey
 import com.metrolist.music.constants.LyricsRomanizeList
 import com.metrolist.music.constants.LyricsTextPositionKey
+import com.metrolist.music.constants.LyricsTextSizeKey
 import com.metrolist.music.constants.OpenRouterApiKey
 import com.metrolist.music.constants.OpenRouterBaseUrlKey
 import com.metrolist.music.constants.OpenRouterDefaultBaseUrl
@@ -161,6 +163,8 @@ fun ExperimentalLyrics(
 
     val lyricsTextPosition by rememberEnumPreference(LyricsTextPositionKey, LyricsPosition.CENTER)
     val changeLyrics by rememberPreference(LyricsClickKey, true)
+    val lyricsTextSize by rememberPreference(LyricsTextSizeKey, 24f)
+    val lyricsLineSpacing by rememberPreference(LyricsLineSpacingKey, 1.3f)
     val romanizeLyricsList = rememberPreference(LyricsRomanizeList, "")
     val romanizeAsMain by rememberPreference(LyricsRomanizeAsMainKey, false)
     val romanizeCyrillicByLine by rememberPreference(LyricsRomanizeCyrillicByLineKey, false)
@@ -770,7 +774,7 @@ fun ExperimentalLyrics(
                                         bgVisible = bgVisible, isSelected = selectedIndices.contains(index),
                                         isSelectionModeActive = isSelectionModeActive, currentPositionState = currentPositionState,
                                         lyricsOffset = (currentSong?.song?.lyricsOffset ?: 0).toLong(),
-                                        playerConnection = playerConnection, lyricsTextSize = 36f, lyricsLineSpacing = 1.3f,
+                                        playerConnection = playerConnection, lyricsTextSize = lyricsTextSize, lyricsLineSpacing = lyricsLineSpacing,
                                         expressiveAccent = expressiveAccent, lyricsTextPosition = lyricsTextPosition,
                                         respectAgentPositioning = respectAgentPositioning, isAutoScrollEnabled = isAutoScrollEnabled,
                                         displayedCurrentLineIndex = deferredCurrentLineIndex, romanizeAsMain = romanizeAsMain,
